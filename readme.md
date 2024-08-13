@@ -20,21 +20,24 @@ A map with expiration date
 
 
 
-## examples 
+## examples
 
 ```go
-package main 
+package main
 
 import (
+	"fmt"
 	"github.com/0xdoomxy/ttlmap"
 	"time"
-	"fmt"
 )
+
 func main() {
 	//set the global expire time
 	var global_ttl = 3 * time.Second
 	// ttlmap.WithFlushInterval: set the flush time  which is connected with  delete the invalid key,value in  level map
 	tm := ttlmap.NewTTLMap[string, string](ttlmap.WithTTL[string, string](global_ttl), ttlmap.WithFlushInterval[string, string](1*time.Second))
+	// if you want to set a kye value with custom expire time 
+	tm.SetWithExpire("1","2",time.Minute)
 	// if you want to set a key value
 	tm.Set("1", "2")
 	//if you want to delete a key value
@@ -54,11 +57,11 @@ func main() {
 	if ok {
 		fmt.Println(val)
 	}
-	
+
 	//release the resource about this ttl map,Undoubtedly, it was a blocking operation, but it took very little time because it only released the value pointed to by the pointer
 	tm.Drain()
 }
-	
+
 ```
 
 ## Benchmark

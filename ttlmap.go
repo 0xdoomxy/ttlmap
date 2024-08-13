@@ -5,24 +5,24 @@ import (
 	"time"
 )
 
-type WrappedV[V any] struct {
+type wrappedV[V any] struct {
 	v V
 	t int64
 }
 
-type ttlMap[K comparable, V any] struct {
-	value         map[K]WrappedV[V]
+type TtlMap[K comparable, V any] struct {
+	value         map[K]wrappedV[V]
 	rw            sync.RWMutex
 	ttl           int64
 	trigger       chan struct{}
-	cleanF        func(*ttlMap[K, V])
+	cleanF        func(*TtlMap[K, V])
 	finalizer     chan struct{}
 	flushInterval time.Duration
 }
 
-func NewTTLMap[K comparable, V any](options ...TTLMapOption[K, V]) (res *ttlMap[K, V]) {
-	res = &ttlMap[K, V]{
-		value:     make(map[K]WrappedV[V]),
+func NewTTLMap[K comparable, V any](options ...TTLMapOption[K, V]) (res *TtlMap[K, V]) {
+	res = &TtlMap[K, V]{
+		value:     make(map[K]wrappedV[V]),
 		rw:        sync.RWMutex{},
 		ttl:       int64(3 * time.Minute),
 		trigger:   make(chan struct{}),
@@ -32,7 +32,7 @@ func NewTTLMap[K comparable, V any](options ...TTLMapOption[K, V]) (res *ttlMap[
 	for _, option := range options {
 		option(res)
 	}
-	res.cleanF = func(tm *ttlMap[K, V]) {
+	res.cleanF = func(tm *TtlMap[K, V]) {
 		tm.rw.Lock()
 		defer tm.rw.Unlock()
 		for k, v := range tm.value {
@@ -41,7 +41,7 @@ func NewTTLMap[K comparable, V any](options ...TTLMapOption[K, V]) (res *ttlMap[
 			}
 		}
 	}
-	go func(inner *ttlMap[K, V]) {
+	go func(inner *TtlMap[K, V]) {
 		timer := time.NewTimer(inner.flushInterval)
 		maxPause := time.Duration(inner.flushInterval / 3)
 		pause := time.Millisecond * 10
@@ -52,7 +52,7 @@ func NewTTLMap[K comparable, V any](options ...TTLMapOption[K, V]) (res *ttlMap[
 		for {
 			select {
 			case <-res.finalizer:
-				*inner = ttlMap[K, V]{}
+				*inner = TtlMap[K, V]{}
 				return
 			case <-timer.C:
 				if mutex.TryLock() {
@@ -68,47 +68,47 @@ func NewTTLMap[K comparable, V any](options ...TTLMapOption[K, V]) (res *ttlMap[
 	return
 }
 
-type TTLMapOption[K comparable, V any] func(*ttlMap[K, V])
+type TTLMapOption[K comparable, V any] func(*TtlMap[K, V])
 
 func WithTTL[K comparable, V any](duration time.Duration) TTLMapOption[K, V] {
-	return func(t *ttlMap[K, V]) {
+	return func(t *TtlMap[K, V]) {
 		t.ttl = int64(duration)
 	}
 }
 func WithFlushInterval[K comparable, V any](interval time.Duration) TTLMapOption[K, V] {
-	return func(t *ttlMap[K, V]) {
+	return func(t *TtlMap[K, V]) {
 		t.flushInterval = interval
 	}
 }
 
-func (tm *ttlMap[K, V]) Set(key K, value V) {
+func (tm *TtlMap[K, V]) Set(key K, value V) {
 	tm.rw.Lock()
 	defer tm.rw.Unlock()
-	tm.value[key] = WrappedV[V]{
+	tm.value[key] = wrappedV[V]{
 		v: value,
 		t: time.Now().UnixNano(),
 	}
 }
-func (tm *ttlMap[K, V]) Flush() {
+func (tm *TtlMap[K, V]) Flush() {
 	tm.trigger <- struct{}{}
 }
-func (tm *ttlMap[K, V]) Drain() {
+func (tm *TtlMap[K, V]) Drain() {
 	tm.finalizer <- struct{}{}
 }
 
-func (tm *ttlMap[K, V]) SetWithExpire(key K, value V, ttl time.Duration) {
+func (tm *TtlMap[K, V]) SetWithExpire(key K, value V, ttl time.Duration) {
 	tm.rw.Lock()
 	defer tm.rw.Unlock()
-	tm.value[key] = WrappedV[V]{
+	tm.value[key] = wrappedV[V]{
 		v: value,
 		t: time.Now().UnixNano() + int64(ttl),
 	}
 }
 
-func (tm *ttlMap[K, V]) Get(key K) (value V) {
+func (tm *TtlMap[K, V]) Get(key K) (value V) {
 	tm.rw.RLock()
 	defer tm.rw.RUnlock()
-	var v WrappedV[V]
+	var v wrappedV[V]
 	var vk bool
 	v, vk = tm.value[key]
 	if !vk {
@@ -120,10 +120,10 @@ func (tm *ttlMap[K, V]) Get(key K) (value V) {
 	}
 	return v.v
 }
-func (tm *ttlMap[K, V]) TryGet(key K) (value V, ok bool) {
+func (tm *TtlMap[K, V]) TryGet(key K) (value V, ok bool) {
 	tm.rw.RLock()
 	defer tm.rw.RUnlock()
-	var v WrappedV[V]
+	var v wrappedV[V]
 	var vk bool
 	v, vk = tm.value[key]
 	if v.t+tm.ttl <= time.Now().UnixNano() {
@@ -132,10 +132,10 @@ func (tm *ttlMap[K, V]) TryGet(key K) (value V, ok bool) {
 	}
 	return v.v, vk
 }
-func (tm *ttlMap[K, V]) TryDelete(key K) (value V, ok bool) {
+func (tm *TtlMap[K, V]) TryDelete(key K) (value V, ok bool) {
 	tm.rw.Lock()
 	defer tm.rw.Unlock()
-	var v WrappedV[V]
+	var v wrappedV[V]
 	var vk bool
 	v, vk = tm.value[key]
 	if !vk {
@@ -147,7 +147,7 @@ func (tm *ttlMap[K, V]) TryDelete(key K) (value V, ok bool) {
 	}
 	return v.v, true
 }
-func (tm *ttlMap[K, V]) Delete(key K) {
+func (tm *TtlMap[K, V]) Delete(key K) {
 	tm.rw.Lock()
 	defer tm.rw.Unlock()
 	delete(tm.value, key)

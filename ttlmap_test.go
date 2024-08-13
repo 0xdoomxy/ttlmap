@@ -106,7 +106,7 @@ func BenchmarkTTlMapDelete(b *testing.B) {
 }
 func BenchmarkTTlMapFind(b *testing.B) {
 	var ttl = time.Second * 10
-	tm := ttlmap.NewTTLMap[string, string](ttlmap.WithTTL[string, string](ttl))
+	tm := ttlmap.NewTTLMap[string, string](ttlmap.WithTTL[string, string](ttl), ttlmap.WithFlushInterval[string, string](1*time.Millisecond))
 	for i := 0; i < b.N; i++ {
 		tm.Set(strconv.Itoa(i), strconv.Itoa(i))
 	}
