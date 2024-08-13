@@ -13,7 +13,10 @@ A map with expiration date
 
 ## How to Use
 
-> go get github.com/0xdoomxy/ttlmap
+
+```go
+   go get github.com/0xdoomxy/ttlmap
+```
 
 
 
