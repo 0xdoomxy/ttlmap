@@ -11,6 +11,7 @@ type WrappedV[V any] struct {
 }
 
 type ttlMap[K comparable, V any] struct {
+	_ [0]func()
 	value         map[K]WrappedV[V]
 	rw            sync.RWMutex
 	ttl           int64
