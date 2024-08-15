@@ -66,7 +66,7 @@ func main() {
 
 ## Benchmark
 
-![img.png](images/img.png)
+![img.png](images/benchmark.png)
 
 ## How to Contribute
 

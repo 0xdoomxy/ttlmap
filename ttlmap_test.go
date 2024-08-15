@@ -1,12 +1,19 @@
 package ttlmap_test
 
 import (
+	"fmt"
 	"github.com/0xdoomxy/ttlmap"
 	"github.com/stretchr/testify/assert"
 	"strconv"
 	"testing"
 	"time"
 )
+
+func init() {
+	fmt.Println("the benchmark map capacity is 5000000")
+}
+
+const benchmarkCap = 5000000
 
 func TestTTLMapInsert(t *testing.T) {
 	var ttl = time.Second * 10
@@ -73,18 +80,25 @@ func BenchmarkMapInsert(b *testing.B) {
 	}
 }
 func BenchmarkMapDelete(b *testing.B) {
+	b.StopTimer()
 	var m = make(map[string]string)
-	for i := 0; i < b.N; i++ {
+	for i := 0; i < benchmarkCap; i++ {
 		m[strconv.Itoa(i)] = strconv.Itoa(i)
 	}
+	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		delete(m, strconv.Itoa(i))
 	}
 }
 func BenchmarkMapFind(b *testing.B) {
+	b.StopTimer()
 	var m = make(map[string]string)
-	for i := 0; i < b.N; i++ {
+	for i := 0; i < benchmarkCap; i++ {
 		m[strconv.Itoa(i)] = strconv.Itoa(i)
+	}
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		_ = m[strconv.Itoa(i)]
 	}
 }
 func BenchmarkTTlMapInsert(b *testing.B) {
@@ -95,31 +109,37 @@ func BenchmarkTTlMapInsert(b *testing.B) {
 	}
 }
 func BenchmarkTTlMapDelete(b *testing.B) {
+	b.StopTimer()
 	var ttl = time.Second * 10
 	tm := ttlmap.NewTTLMap[string, string](ttlmap.WithTTL[string, string](ttl))
-	for i := 0; i < b.N; i++ {
+	for i := 0; i < benchmarkCap; i++ {
 		tm.Set(strconv.Itoa(i), strconv.Itoa(i))
 	}
+	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		tm.Delete(strconv.Itoa(i))
 	}
 }
 func BenchmarkTTlMapFind(b *testing.B) {
+	b.StopTimer()
 	var ttl = time.Second * 10
-	tm := ttlmap.NewTTLMap[string, string](ttlmap.WithTTL[string, string](ttl), ttlmap.WithFlushInterval[string, string](1*time.Millisecond))
-	for i := 0; i < b.N; i++ {
+	tm := ttlmap.NewTTLMap[string, string](ttlmap.WithTTL[string, string](ttl))
+	for i := 0; i < benchmarkCap; i++ {
 		tm.Set(strconv.Itoa(i), strconv.Itoa(i))
 	}
+	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		tm.Get(strconv.Itoa(i))
 	}
 }
 func BenchmarkTTlMapTryDelete(b *testing.B) {
+	b.StopTimer()
 	var ttl = time.Second * 10
 	tm := ttlmap.NewTTLMap[string, string](ttlmap.WithTTL[string, string](ttl))
-	for i := 0; i < b.N; i++ {
+	for i := 0; i < benchmarkCap; i++ {
 		tm.Set(strconv.Itoa(i), strconv.Itoa(i))
 	}
+	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		tm.TryDelete(strconv.Itoa(i))
 	}

@@ -25,7 +25,7 @@ func NewTTLMap[K comparable, V any](options ...TTLMapOption[K, V]) (res *TtlMap[
 		value:     make(map[K]wrappedV[V]),
 		rw:        sync.RWMutex{},
 		ttl:       int64(3 * time.Minute),
-		trigger:   make(chan struct{}),
+		trigger:   make(chan struct{}, 0),
 		finalizer: make(chan struct{}, 0),
 	}
 	res.flushInterval = time.Duration(res.ttl / 3)
