@@ -28,6 +28,16 @@ func TestTTLMapExpire(t *testing.T) {
 	time.Sleep(time.Second)
 	assert.Equal(t, "", tm.Get("key"))
 }
+func TestTTLMapInsertWithExpire(t *testing.T) {
+	var ttl = time.Second * 2
+	tm := ttlmap.NewTTLMap[string, string](ttlmap.WithTTL[string, string](ttl))
+	tm.SetWithExpire("key", "value", ttl)
+	time.Sleep(time.Second)
+	assert.Equal(t, "value", tm.Get("key"))
+	time.Sleep(time.Second)
+	assert.Equal(t, "", tm.Get("key"))
+}
+
 func TestTTLMapDelete(t *testing.T) {
 	var ttl = time.Second * 1
 	tm := ttlmap.NewTTLMap[string, string](ttlmap.WithTTL[string, string](ttl))

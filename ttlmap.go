@@ -101,7 +101,7 @@ func (tm *TtlMap[K, V]) SetWithExpire(key K, value V, ttl time.Duration) {
 	defer tm.rw.Unlock()
 	tm.value[key] = wrappedV[V]{
 		v: value,
-		t: time.Now().UnixNano() + int64(ttl),
+		t: time.Now().UnixNano() + int64(ttl) - tm.ttl,
 	}
 }
 
