@@ -11,6 +11,7 @@ type wrappedV[V any] struct {
 }
 
 type TtlMap[K comparable, V any] struct {
+	_             [0]func()
 	value         map[K]wrappedV[V]
 	rw            sync.RWMutex
 	ttl           int64
@@ -45,19 +46,19 @@ func NewTTLMap[K comparable, V any](options ...TTLMapOption[K, V]) (res *TtlMap[
 		timer := time.NewTimer(inner.flushInterval)
 		maxPause := time.Duration(inner.flushInterval / 3)
 		pause := time.Millisecond * 10
-		mutex := sync.Mutex{}
 		if pause > maxPause {
 			pause = maxPause
 		}
 		for {
 			select {
 			case <-res.finalizer:
+				close(inner.trigger)
+				close(inner.finalizer)
 				*inner = TtlMap[K, V]{}
 				return
 			case <-timer.C:
-				if mutex.TryLock() {
-					inner.cleanF(inner)
-				}
+
+				inner.cleanF(inner)
 			case <-inner.trigger:
 				inner.cleanF(inner)
 			default:
