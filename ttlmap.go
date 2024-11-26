@@ -44,11 +44,7 @@ func NewTTLMap[K comparable, V any](options ...TTLMapOption[K, V]) (res *TtlMap[
 	}
 	go func(inner *TtlMap[K, V]) {
 		timer := time.NewTimer(inner.flushInterval)
-		maxPause := time.Duration(inner.flushInterval / 3)
 		pause := time.Millisecond * 10
-		if pause > maxPause {
-			pause = maxPause
-		}
 		for {
 			select {
 			case <-res.finalizer:
@@ -57,7 +53,6 @@ func NewTTLMap[K comparable, V any](options ...TTLMapOption[K, V]) (res *TtlMap[
 				*inner = TtlMap[K, V]{}
 				return
 			case <-timer.C:
-
 				inner.cleanF(inner)
 			case <-inner.trigger:
 				inner.cleanF(inner)
