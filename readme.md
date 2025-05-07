@@ -58,7 +58,7 @@ func main() {
 		fmt.Println(val)
 	}
 
-	//release the resource about this ttl map,Undoubtedly, it was a blocking operation, but it took very little time because it only released the value pointed to by the pointer
+	//Releasing resources related to this ttl mapping is undoubtedly a blocking operation, but it takes a short amount of time because it only releases the value pointed to by the pointer, at most waiting for the execution of a Goroutine. This operation is necessary, and only after it is performed can the ttlmap object be reclaimed by GC
 	tm.Drain()
 }
 
@@ -74,7 +74,3 @@ func main() {
 + commit a great pr 
 
 If you also approve of this project, please give it a **star** 
-
-## Finally
-
-I am building a web3 social platform, which is a great thing. Starting from my personal blog, I am transforming it into an excellent web3 social platform, hoping to gain attention [https://www.0xdoomxy.top](https://www.0xdoomxy.top)
