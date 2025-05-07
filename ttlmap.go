@@ -2,16 +2,20 @@ package ttlmap
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
+	"unsafe"
 )
 
+type nocopy uintptr
 type wrappedV[V any] struct {
 	v V
 	t int64
 }
 
 type TtlMap[K comparable, V any] struct {
-	_             [0]func()
+	_             [0]func() // cant ==
+	nocopy        nocopy
 	value         map[K]wrappedV[V]
 	rw            sync.RWMutex
 	ttl           int64
@@ -33,6 +37,7 @@ func NewTTLMap[K comparable, V any](options ...TTLMapOption[K, V]) (res *TtlMap[
 	for _, option := range options {
 		option(res)
 	}
+	res.check()
 	res.cleanF = func(tm *TtlMap[K, V]) {
 		tm.rw.Lock()
 		defer tm.rw.Unlock()
@@ -78,6 +83,7 @@ func WithFlushInterval[K comparable, V any](interval time.Duration) TTLMapOption
 }
 
 func (tm *TtlMap[K, V]) Set(key K, value V) {
+	tm.check()
 	tm.rw.Lock()
 	defer tm.rw.Unlock()
 	tm.value[key] = wrappedV[V]{
@@ -86,13 +92,20 @@ func (tm *TtlMap[K, V]) Set(key K, value V) {
 	}
 }
 func (tm *TtlMap[K, V]) Flush() {
+	tm.check()
 	tm.trigger <- struct{}{}
 }
 func (tm *TtlMap[K, V]) Drain() {
+	tm.check()
 	tm.finalizer <- struct{}{}
 }
-
+func (tm *TtlMap[K, V]) check() {
+	if uintptr(tm.nocopy) != uintptr(unsafe.Pointer(tm)) && !atomic.CompareAndSwapUintptr((*uintptr)(&tm.nocopy), 0, uintptr(unsafe.Pointer(tm))) && uintptr(tm.nocopy) != uintptr(unsafe.Pointer(tm)) {
+		panic(any("object has copied"))
+	}
+}
 func (tm *TtlMap[K, V]) SetWithExpire(key K, value V, ttl time.Duration) {
+	tm.check()
 	tm.rw.Lock()
 	defer tm.rw.Unlock()
 	tm.value[key] = wrappedV[V]{
@@ -102,6 +115,7 @@ func (tm *TtlMap[K, V]) SetWithExpire(key K, value V, ttl time.Duration) {
 }
 
 func (tm *TtlMap[K, V]) Get(key K) (value V) {
+	tm.check()
 	tm.rw.RLock()
 	defer tm.rw.RUnlock()
 	var v wrappedV[V]
@@ -117,6 +131,7 @@ func (tm *TtlMap[K, V]) Get(key K) (value V) {
 	return v.v
 }
 func (tm *TtlMap[K, V]) TryGet(key K) (value V, ok bool) {
+	tm.check()
 	tm.rw.RLock()
 	defer tm.rw.RUnlock()
 	var v wrappedV[V]
@@ -129,6 +144,7 @@ func (tm *TtlMap[K, V]) TryGet(key K) (value V, ok bool) {
 	return v.v, vk
 }
 func (tm *TtlMap[K, V]) TryDelete(key K) (value V, ok bool) {
+	tm.check()
 	tm.rw.Lock()
 	defer tm.rw.Unlock()
 	var v wrappedV[V]
@@ -144,6 +160,7 @@ func (tm *TtlMap[K, V]) TryDelete(key K) (value V, ok bool) {
 	return v.v, true
 }
 func (tm *TtlMap[K, V]) Delete(key K) {
+	tm.check()
 	tm.rw.Lock()
 	defer tm.rw.Unlock()
 	delete(tm.value, key)
