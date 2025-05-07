@@ -1,6 +1,11 @@
-# TTL Map 
 
+# TTL Map 
 A map with expiration date
+
+<p align="center">
+ <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/0xdoomxy/ttlmap">
+  <img alt="GitHub License" src="https://img.shields.io/github/license/0xdoomxy/ttlmap">
+</p>
 
 ## Advantage
 
