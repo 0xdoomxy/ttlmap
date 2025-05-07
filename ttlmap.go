@@ -125,7 +125,6 @@ func (tm *TtlMap[K, V]) Get(key K) (value V) {
 		return
 	}
 	if v.t+tm.ttl <= time.Now().UnixNano() {
-		delete(tm.value, key)
 		return
 	}
 	return v.v
@@ -138,7 +137,6 @@ func (tm *TtlMap[K, V]) TryGet(key K) (value V, ok bool) {
 	var vk bool
 	v, vk = tm.value[key]
 	if v.t+tm.ttl <= time.Now().UnixNano() {
-		delete(tm.value, key)
 		return
 	}
 	return v.v, vk
